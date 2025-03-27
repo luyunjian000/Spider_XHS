@@ -61,6 +61,12 @@ npm install
 ### 🚀运行项目
 ```
 python main.py
+
+```
+### 🚀启动web服务
+```
+python web_service.py
+
 ```
 
 ### 🗝️注意事项

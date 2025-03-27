@@ -3,7 +3,7 @@ from loguru import logger
 from apis.pc_apis import XHS_Apis
 from xhs_utils.common_utils import init
 from xhs_utils.data_util import handle_note_info, download_note, save_to_xlsx
-
+import urllib
 
 class Data_Spider():
     def __init__(self):
@@ -105,6 +105,79 @@ class Data_Spider():
             msg = e
         logger.info(f'搜索关键词 {query} 笔记: {success}, msg: {msg}')
         return note_list, success, msg
+
+    def query_some_search_note(self, query: str, require_num: int, cookies_str: str, sort="general", note_type=0, proxies=None):
+        """
+            指定数量搜索笔记，设置排序方式和笔记类型和笔记数量
+            :param query 搜索的关键词
+            :param require_num 搜索的数量
+            :param cookies_str 你的cookies
+            :param base_path 保存路径
+            :param sort 排序方式 general:综合排序, time_descending:时间排序, popularity_descending:热度排序
+            :param note_type 笔记类型 0:全部, 1:视频, 2:图文
+            返回搜索的结果
+        """
+        note_list = []
+        try:
+            success, msg, notes = self.xhs_apis.search_some_note(query, require_num, cookies_str, sort, note_type, proxies)
+            if success:
+                notes = list(filter(lambda x: x['model_type'] == "note", notes))
+                logger.info(f'搜索关键词 {query} 笔记数量: {len(notes)}')
+                for note in notes:
+                    note_url = f"https://www.xiaohongshu.com/explore/{note['id']}?xsec_token={note['xsec_token']}"
+                    note_list.append(note_url)
+            note_detail_list = self.query_some_note(note_list, cookies_str, proxies)
+        except Exception as e:
+            success = False
+            msg = e
+        logger.info(f'搜索关键词 {query} 笔记: {success}, msg: {msg}')
+        return note_list, note_detail_list, success, msg
+
+    def query_some_note(self, notes: list, cookies_str: str,proxies=None):
+        """
+        爬取一些笔记的信息
+        :param notes:
+        :param cookies_str:
+        :return:
+        """
+        note_list = []
+        for note_url in notes:
+            success, msg, note_info = self.spider_note(note_url, cookies_str, proxies)
+            if note_info is not None and success:
+                note_list.append(note_info)
+        return note_list
+
+    def query_user_notes(self, user_query: list, node_count: int, cookies_str: str, proxies=None):
+        cursor = ''
+        note_list = []
+        try:
+            for user_xhs_id in user_query:
+                success, msg, res_json = self.xhs_apis.search_user(user_xhs_id, cookies_str, 1, proxies)
+                if not success:
+                    raise Exception(msg)
+                if not res_json.get("data") or not res_json["data"].get("users") or len(res_json["data"]["users"]) == 0:
+                    logger.error(f"无效的用户数据结构: {res_json}")
+                    continue  # 跳过当前用户继续执行
+
+                user_id = res_json["data"]["users"][0]["id"]
+                xsec_token = res_json["data"]["users"][0]["xsec_token"]
+                xsec_source = "pc_search"
+                while True:
+                    success, msg, res_json = self.xhs_apis.get_user_note_info(user_id, cursor, cookies_str, xsec_token, xsec_source, proxies)
+                    if not success:
+                        raise Exception(msg)
+                    notes = res_json["data"]["notes"]
+                    if 'cursor' in res_json["data"]:
+                        cursor = str(res_json["data"]["cursor"])
+                    else:
+                        break
+                    note_list.extend(notes)
+                    if len(notes) == 0 or not res_json["data"]["has_more"]:
+                        break
+        except Exception as e:
+            success = False
+            msg = e
+        return success, msg, note_list
 
 if __name__ == '__main__':
     """
