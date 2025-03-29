@@ -97,7 +97,7 @@ def search_user_notes():
         return jsonify({"error": "Missing required fields"}), 400
 
     # 同步执行爬虫任务
-    success, msg, note_list = data_spider.query_user_notes(
+    success, msg, note_list, note_detail_list = data_spider.query_user_notes(
         user_query=data['user_query'],
         node_count=data['node_count'],
         cookies_str=cookies_str
@@ -106,6 +106,7 @@ def search_user_notes():
     return jsonify({
         "success": success,
         "note_list": note_list,
+        "note_detail_list": note_detail_list,
         "message": str(msg)
     })
 

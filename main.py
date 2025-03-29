@@ -147,9 +147,10 @@ class Data_Spider():
                 note_list.append(note_info)
         return note_list
 
-    def query_user_notes(self, user_query: list, node_count: int, cookies_str: str, proxies=None):
+    def query_user_notes(self, user_query: list, node_count: str, cookies_str: str, proxies=None):
         cursor = ''
         note_list = []
+        note_detail_list = []
         try:
             for user_xhs_id in user_query:
                 success, msg, res_json = self.xhs_apis.search_user(user_xhs_id, cookies_str, 1, proxies)
@@ -162,22 +163,40 @@ class Data_Spider():
                 user_id = res_json["data"]["users"][0]["id"]
                 xsec_token = res_json["data"]["users"][0]["xsec_token"]
                 xsec_source = "pc_search"
-                while True:
-                    success, msg, res_json = self.xhs_apis.get_user_note_info(user_id, cursor, cookies_str, xsec_token, xsec_source, proxies)
-                    if not success:
-                        raise Exception(msg)
-                    notes = res_json["data"]["notes"]
-                    if 'cursor' in res_json["data"]:
-                        cursor = str(res_json["data"]["cursor"])
-                    else:
-                        break
-                    note_list.extend(notes)
-                    if len(notes) == 0 or not res_json["data"]["has_more"]:
-                        break
+
+                success, msg, res_json = self.xhs_apis.get_user_note_info(user_id, cursor, cookies_str, node_count, xsec_token, xsec_source, proxies)
+                if not success:
+                    raise Exception(msg)
+                notes = res_json["data"]["notes"]
+
+                # 这边好像没有标识
+                # notes = list(filter(lambda x: x['model_type'] == "note", notes))
+                logger.info(f'搜索关键词 {user_xhs_id} 笔记数量: {len(notes)}')
+                part_note_list = []
+                for note in notes:
+                    note_url = f"https://www.xiaohongshu.com/explore/{note['note_id']}?xsec_token={note['xsec_token']}"
+                    part_note_list.append(note_url)
+                    note_list.append(note_url)
+
+                detail_list = self.query_some_note(part_note_list, cookies_str, proxies);    
+                note_detail_list.extend(detail_list)
+
+                # while True:
+                #     success, msg, res_json = self.xhs_apis.get_user_note_info(user_id, cursor, cookies_str, xsec_token, xsec_source, proxies)
+                #     if not success:
+                #         raise Exception(msg)
+                #     notes = res_json["data"]["notes"]
+                #     if 'cursor' in res_json["data"]:
+                #         cursor = str(res_json["data"]["cursor"])
+                #     else:
+                #         break
+                #     note_list.extend(notes)
+                #     if len(notes) == 0 or not res_json["data"]["has_more"]:
+                #         break
         except Exception as e:
             success = False
             msg = e
-        return success, msg, note_list
+        return success, msg, note_list, note_detail_list
 
 if __name__ == '__main__':
     """

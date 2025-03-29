@@ -190,7 +190,35 @@ class XHS_Apis():
             success = False
             msg = str(e)
         return success, msg, res_json
-
+    
+    def get_user_note_info(self, user_id: str, cursor: str, cookies_str: str, node_count: str, xsec_token='', xsec_source='', proxies: dict = None):
+        """
+            获取用户指定位置的笔记
+            :param user_id: 你想要获取的用户的id
+            :param cursor: 你想要获取的笔记的cursor
+            :param cookies_str: 你的cookies
+            返回用户指定位置的笔记
+        """
+        res_json = None
+        try:
+            api = f"/api/sns/web/v1/user_posted"
+            params = {
+                "num": node_count,
+                "cursor": cursor,
+                "user_id": user_id,
+                "image_formats": "jpg,webp,avif",
+                "xsec_token": xsec_token,
+                "xsec_source": xsec_source,
+            }
+            splice_api = splice_str(api, params)
+            headers, cookies, data = generate_request_params(cookies_str, splice_api)
+            response = requests.get(self.base_url + splice_api, headers=headers, cookies=cookies, proxies=proxies)
+            res_json = response.json()
+            success, msg = res_json["success"], res_json["msg"]
+        except Exception as e:
+            success = False
+            msg = str(e)
+        return success, msg, res_json
 
     def get_user_all_notes(self, user_url: str, cookies_str: str, proxies: dict = None):
         """

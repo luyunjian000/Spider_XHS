@@ -68,6 +68,34 @@ python main.py
 python web_service.py
 
 ```
+### 🚀linux上操作
+```
+# liunx 手动下载二进制包 安装 nodejs
+# 1. 下载最新 18.x 版本
+curl -O https://nodejs.org/dist/v18.20.2/node-v18.20.2-linux-x64.tar.xz
+
+# 2. 解压并安装
+sudo mkdir -p /usr/local/lib/nodejs
+sudo tar -xJvf node-v18.20.2-linux-x64.tar.xz -C /usr/local/lib/nodejs
+
+# 3. 配置环境变量
+echo 'export PATH=/usr/local/lib/nodejs/node-v18.20.2-linux-x64/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+# python 
+# 没有pip命令的 用这个安装
+sudo dnf install python3-pip
+
+# 启动服务后台服务（输出重定向到日志文件）
+nohup python3 web_service.py > web_service.log 2>&1 &
+
+# 查看进程
+jobs -l
+
+# 终止服务
+pkill -f "python3 web_service.py"
+
+```
 
 ### 🗝️注意事项
 - main.py中的代码是爬虫的入口，可以根据自己的需求进行修改
