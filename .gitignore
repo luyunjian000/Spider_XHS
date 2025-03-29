@@ -29,3 +29,7 @@ ENV/
 env.bak/
 venv.bak/
 
+/datas
+/.idea
+package-lock.json
+package-lock.json
