@@ -167,10 +167,9 @@ class Data_Spider():
                 success, msg, res_json = self.xhs_apis.get_user_note_info(user_id, cursor, cookies_str, node_count, xsec_token, xsec_source, proxies)
                 if not success:
                     raise Exception(msg)
-                notes = res_json["data"]["notes"]
-
-                # 这边好像没有标识
-                # notes = list(filter(lambda x: x['model_type'] == "note", notes))
+                notes = res_json["data"]["notes"][:int(node_count)]
+                
+                # 这边 指定了 node_count 好像没用，这边手动限制只获取前几个的数量
                 logger.info(f'搜索关键词 {user_xhs_id} 笔记数量: {len(notes)}')
                 part_note_list = []
                 for note in notes:
